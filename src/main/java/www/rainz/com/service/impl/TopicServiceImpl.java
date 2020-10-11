@@ -23,7 +23,7 @@ import java.util.Random;
 @Service
 public class TopicServiceImpl implements TopicService {
     List<QuestionsData> topics = new ArrayList<>();
-    String allTopic;
+    String allTopic = "";
     @Override
     public boolean createTopics(TopicReq req) {
         Assert.notNull(req.getTopicCount(), "生成题目条件:题目数量为空！");
@@ -36,8 +36,8 @@ public class TopicServiceImpl implements TopicService {
             if(!checkTopic(topic)){
                 continue;
             }
-            flag++;
             QuestionsData questionsData = new QuestionsData().setId(flag).setQuestion(topic);
+            flag++;
             topics.add(questionsData);
         }
         Assert.isTrue(creatTopicTxt(), "生成文件题目失败！");
@@ -64,19 +64,21 @@ public class TopicServiceImpl implements TopicService {
         File file = new File("./src/Exercises.txt");
         if(!file.exists()){
             try {
-                Assert.isTrue(file.createNewFile(), "创建题目文件失败！");;
+                Assert.isTrue(file.createNewFile(), "创建题目文件失败！");
             } catch (IOException e) {
                 throw new RuntimeException("创建题目文件异常！");
             }
         }
+
 
         topics.stream().forEach(topic->{
             allTopic = allTopic + topic.toString() + "\n";
         });
         FileWriter fwriter = null;
         try {
-            fwriter = new FileWriter("./src/Exercises.txt");
+            fwriter = new FileWriter("./src/Exercises.txt", false);
             fwriter.write(allTopic);
+            allTopic = "";
         } catch (IOException ex) {
             ex.printStackTrace();
         } finally {
@@ -92,20 +94,22 @@ public class TopicServiceImpl implements TopicService {
 
     private String createTopic(Integer numLimit, Integer count){
         int numFlag = 3;
-        String topic = null;
+        String topic = "";
         while(numFlag > 0){
             String num = getNumber(numLimit);
             numFlag--;
             if(numFlag>0){
-                topic = num + getOperator();
+                topic = topic + num + getOperator();
+            }else if(numFlag == 0){
+                topic = topic + num;
             }
         }
         return topic;
     }
     private String getNumber(Integer numLimit){
         Random random = new Random();
-        int numerator = random.nextInt(numLimit);
-        int denominator = random.nextInt(numLimit);
+        int numerator = checkNum(random.nextInt(numLimit), numLimit);
+        int denominator = checkNum(random.nextInt(numLimit), numLimit);
         if(numerator >= denominator){
             if(numerator%denominator == 0){
                 return String.valueOf(numerator/denominator);
@@ -114,10 +118,17 @@ public class TopicServiceImpl implements TopicService {
         return "("+numerator+"/"+denominator+")";
     }
 
+    private int checkNum(int num, int numLimit){
+        Random random = new Random();
+        while(num <= 0){
+            num = random.nextInt(numLimit);
+        }
+        return num;
+    }
     private String getOperator(){
         String[] operators = {"+","-","*","/"};
         Random random = new Random();
-        int index = random.nextInt();
+        int index = random.nextInt(100);
         index %= 3;
         return operators[index];
     }
